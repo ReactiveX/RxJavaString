@@ -34,17 +34,6 @@ import static rx.observables.StringObservable.join;
 import static rx.observables.StringObservable.split;
 import static rx.observables.StringObservable.using;
 
-import org.junit.Test;
-
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Func1;
-import rx.observables.StringObservable.Line;
-import rx.observables.StringObservable.UnsafeFunc0;
-import rx.observers.TestObserver;
-import rx.observers.TestSubscriber;
-import rx.util.AssertObservable;
-
 import java.io.ByteArrayInputStream;
 import java.io.FilterReader;
 import java.io.IOException;
@@ -57,6 +46,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Test;
+
+import rx.Observable;
+import rx.Observer;
+import rx.functions.Func1;
+import rx.observables.StringObservable.Line;
+import rx.observables.StringObservable.UnsafeFunc0;
+import rx.observers.TestObserver;
+import rx.observers.TestSubscriber;
 
 public class StringObservableTest {
 
