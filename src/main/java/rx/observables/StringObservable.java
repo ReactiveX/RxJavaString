@@ -56,40 +56,6 @@ public class StringObservable {
     }
 
     /**
-     * Converts an String into an Observable that emits the chars in the String.
-     * <p>
-     * <img width="640" height="315" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/from.png" alt="">
-     *
-     * @param str
-     *            the source String
-     * @return an Observable that emits each char in the source String
-     * @see <a href="https://github.com/ReactiveX/RxJava/wiki/Creating-Observables#from">RxJava wiki: from</a>
-     */
-    public final static Observable<String> from(final String str) {
-        return Observable.create(new OnSubscribe<String>() {
-            @Override
-            public void call(Subscriber<? super String> subscriber) {
-                try {
-                    // Start emitting token's char
-                    for (Character c : str.toCharArray()) {
-                        subscriber.onNext(c.toString());
-                    }
-
-                    // Notify on completed
-                    if (!subscriber.isUnsubscribed()) {
-                        subscriber.onCompleted();
-                    }
-                } catch (Throwable t) {
-                    // Notify on error
-                    if (!subscriber.isUnsubscribed()) {
-                        subscriber.onError(t);
-                    }
-                }
-            }
-        });
-    }
-
-    /**
      * Func0 that allows throwing an {@link IOException}s commonly thrown during IO operations.
      * @see StringObservable#using(UnsafeFunc0, Func1)
      *
@@ -566,50 +532,6 @@ public class StringObservable {
         });
     }
 
-    public final static class Line {
-        private final int number;
-        private final String text;
-
-        public Line(int number, String text) {
-            this.number = number;
-            this.text = text;
-        }
-
-        public int getNumber() {
-            return number;
-        }
-
-        public String getText() {
-            return text;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = 31 + number;
-            result = 31 * result + (text == null ? 0 : text.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Line))
-                return false;
-            Line other = (Line) obj;
-            if (number != other.number)
-                return false;
-            if (other.text == text)
-                return true;
-            if (text == null)
-                return false;
-            return text.equals(other.text);
-        }
-
-        @Override
-        public String toString() {
-            return number + ":" + text;
-        }
-    }
-
     /**
      * Splits the {@link Observable} of Strings by lines and numbers them (zero based index)
      * <p>
@@ -618,13 +540,42 @@ public class StringObservable {
      * @param source
      * @return the Observable conaining the split lines of the source
      */
-    public static Observable<Line> byLine(Observable<String> source) {
-        return split(source, System.getProperty("line.separator")).map(new Func1<String, Line>() {
-            int lineNumber = 0;
+    public static Observable<String> byLine(Observable<String> source) {
+        return split(source, System.getProperty("line.separator"));
+    }
 
+    /**
+     * Converts an String into an Observable that emits the chars in the String.
+     * <p>
+     * <img width="640" height="315" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/from.png" alt="">
+     *
+     * @param str
+     *            the source String
+     * @return an Observable that emits each char in the source String
+     * @see <a href="https://github.com/ReactiveX/RxJava/wiki/Creating-Observables#from">RxJava wiki: from</a>
+     */
+    public static Observable<String> byCharacter(Observable<String> source) {
+        return source.lift(new Operator<String, String>() {
             @Override
-            public Line call(String text) {
-                return new Line(lineNumber++, text);
+            public Subscriber<? super String> call(final Subscriber<? super String> subscriber) {
+                return new Subscriber<String>(subscriber) {
+                    @Override
+                    public void onCompleted() {
+                        subscriber.onCompleted();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        subscriber.onError(e);
+                    }
+
+                    @Override
+                    public void onNext(String str) {
+                        for (char c : str.toCharArray()) {
+                            subscriber.onNext(Character.toString(c));
+                        }
+                    }
+                };
             }
         });
     }

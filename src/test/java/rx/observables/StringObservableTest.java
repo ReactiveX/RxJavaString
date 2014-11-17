@@ -27,6 +27,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static rx.observables.StringObservable.byLine;
+import static rx.observables.StringObservable.byCharacter;
 import static rx.observables.StringObservable.decode;
 import static rx.observables.StringObservable.encode;
 import static rx.observables.StringObservable.from;
@@ -52,7 +53,6 @@ import org.junit.Test;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;
-import rx.observables.StringObservable.Line;
 import rx.observables.StringObservable.UnsafeFunc0;
 import rx.observers.TestObserver;
 import rx.observers.TestSubscriber;
@@ -279,15 +279,6 @@ public class StringObservableTest {
     }
 
     @Test
-    public void testFromString(){
-        String foo = "foo";
-
-        assertEquals("f", StringObservable.from(foo).first().toBlocking().single());
-        assertEquals("o", StringObservable.from(foo).skip(1).take(1).toBlocking().single());
-        assertEquals("o", StringObservable.from(foo).takeLast(1).toBlocking().single());
-    }
-
-    @Test
     public void testFromReader() {
         final String inStr = "test";
         final String outStr = from(new StringReader(inStr)).toBlocking().single();
@@ -299,10 +290,16 @@ public class StringObservableTest {
     public void testByLine() {
         String newLine = System.getProperty("line.separator");
 
-        List<Line> lines = byLine(Observable.from(Arrays.asList("qwer", newLine + "asdf" + newLine, "zx", "cv")))
-                .toList().toBlocking().single();
+        List<String> lines = byLine(Observable.from(Arrays.asList("qwer", newLine + "asdf" + newLine, "zx", "cv"))).toList().toBlocking().single();
 
-        assertEquals(Arrays.asList(new Line(0, "qwer"), new Line(1, "asdf"), new Line(2, "zxcv")), lines);
+        assertEquals(Arrays.asList("qwer", "asdf", "zxcv"), lines);
+    }
+    
+    @Test
+    public void testByCharacter() {
+        List<String> chars = byCharacter(Observable.from(Arrays.asList("foo", "bar"))).toList().toBlocking().single();
+
+        assertEquals(Arrays.asList("f", "o", "o", "b", "a", "r"), chars);
     }
 
     @Test
