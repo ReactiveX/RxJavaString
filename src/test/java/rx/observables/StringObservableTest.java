@@ -277,7 +277,16 @@ public class StringObservableTest {
         StringObservable.from(is).first().toBlocking().single();
         assertEquals(1, numReads.get());
     }
-    
+
+    @Test
+    public void testFromString(){
+        String foo = "foo";
+
+        assertEquals("f", StringObservable.from(foo).first().toBlocking().single());
+        assertEquals("o", StringObservable.from(foo).skip(1).take(1).toBlocking().single());
+        assertEquals("o", StringObservable.from(foo).takeLast(1).toBlocking().single());
+    }
+
     @Test
     public void testFromReader() {
         final String inStr = "test";
@@ -329,7 +338,7 @@ public class StringObservableTest {
             public int read(char[] cbuf) throws IOException {
                 throw new IOException("boo");
             }
-            
+
             @Override
             public void close() throws IOException {
                 closed.set(true);

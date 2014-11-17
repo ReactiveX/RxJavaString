@@ -54,7 +54,41 @@ public class StringObservable {
     public static Observable<byte[]> from(final InputStream i) {
         return from(i, 8 * 1024);
     }
-    
+
+    /**
+     * Converts an String into an Observable that emits the chars in the String.
+     * <p>
+     * <img width="640" height="315" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/from.png" alt="">
+     *
+     * @param str
+     *            the source String
+     * @return an Observable that emits each char in the source String
+     * @see <a href="https://github.com/ReactiveX/RxJava/wiki/Creating-Observables#from">RxJava wiki: from</a>
+     */
+    public final static Observable<String> from(final String str) {
+        return Observable.create(new OnSubscribe<String>() {
+            @Override
+            public void call(Subscriber<? super String> subscriber) {
+                try {
+                    // Start emitting token's char
+                    for (Character c : str.toCharArray()) {
+                        subscriber.onNext(c.toString());
+                    }
+
+                    // Notify on completed
+                    if (!subscriber.isUnsubscribed()) {
+                        subscriber.onCompleted();
+                    }
+                } catch (Throwable t) {
+                    // Notify on error
+                    if (!subscriber.isUnsubscribed()) {
+                        subscriber.onError(t);
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Func0 that allows throwing an {@link IOException}s commonly thrown during IO operations.
      * @see StringObservable#using(UnsafeFunc0, Func1)
