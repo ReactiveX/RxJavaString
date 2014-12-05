@@ -176,7 +176,8 @@ public class StringObservable {
                     n = i.read(buffer);
                     while (n != -1 && !o.isUnsubscribed()) {
                         o.onNext(new String(buffer, 0, n));
-                        n = i.read(buffer);
+                        if (!o.isUnsubscribed())
+                            n = i.read(buffer);
                     }
                 } catch (IOException e) {
                     o.onError(e);
