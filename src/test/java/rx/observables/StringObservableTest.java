@@ -38,6 +38,7 @@ import static rx.observables.StringObservable.using;
 import java.io.ByteArrayInputStream;
 import java.io.FilterReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.Charset;
@@ -303,6 +304,23 @@ public class StringObservableTest {
         assertNotSame(inStr, outStr);
         assertEquals(inStr, outStr);
     }
+    
+	@Test
+	public void testFromReaderWillUnsubscribeBeforeCallingNextRead() {
+		final byte[] inBytes = "test".getBytes();
+		final AtomicInteger numReads = new AtomicInteger(0);
+		ByteArrayInputStream is = new ByteArrayInputStream(inBytes) {
+
+			@Override
+			public synchronized int read(byte[] b, int off, int len) {
+				numReads.incrementAndGet();
+				return super.read(b, off, len);
+			}
+		};
+		StringObservable.from(new InputStreamReader(is)).first().toBlocking()
+				.single();
+		assertEquals(1, numReads.get());
+	}
 
     @Test
     public void testByLine() {
