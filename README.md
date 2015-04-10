@@ -1,6 +1,12 @@
 # RxJava String
 
-String operators for [RxJava](https://github.com/ReactiveX/RxJava).
+String and Byte operators for [RxJava](https://github.com/ReactiveX/RxJava):
+
+* Read bytes from an ```InputStream``` as a stream of byte arrays (```StringObservable.from```)
+* Read text from a ```Reader``` as a stream of ```String``` (```StringObservable.from```)
+* Convert between ```Observable<Byte>``` and ```Observable<String>``` (```StringObservable.encode, decode```)
+* Split text by regex (rechunks a stream of ```String```)  (```StringObservable.split```)
+* Join text by separator (```StringObservable.join, stringConcat```)
 
 ## Master Build Status
 
