@@ -16,13 +16,14 @@
 package rx.observables;
 
 import rx.Observable;
-import rx.Observable.OnSubscribe;
 import rx.Observable.Operator;
 import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.functions.Func2;
+import rx.internal.operators.OnSubscribeInputStream;
+import rx.internal.operators.OnSubscribeReader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -42,8 +43,8 @@ import java.util.regex.Pattern;
 
 public class StringObservable {
     /**
-     * Reads from the bytes from a source {@link InputStream} and outputs {@link Observable} of
-     * {@code byte[]}s
+     * Reads bytes from a source {@link InputStream} and outputs {@link Observable} of
+     * {@code byte[]}s. Supports backpressure.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.from.png" alt="">
      * 
@@ -103,44 +104,24 @@ public class StringObservable {
     }
 
     /**
-     * Reads from the bytes from a source {@link InputStream} and outputs {@link Observable} of
-     * {@code byte[]}s
+     * Reads bytes from a source {@link InputStream} and outputs {@link Observable} of
+     * {@code byte[]}s. Supports backpressure.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.from.png" alt="">
      * 
-     * @param i
+     * @param is
      *            Source {@link InputStream}
      * @param size
      *            internal buffer size
      * @return the Observable containing read byte arrays from the input
      */
-    public static Observable<byte[]> from(final InputStream i, final int size) {
-        return Observable.create(new OnSubscribe<byte[]>() {
-            @Override
-            public void call(Subscriber<? super byte[]> o) {
-                byte[] buffer = new byte[size];
-                try {
-                    if (o.isUnsubscribed())
-                        return;
-                    int n = i.read(buffer);
-                    while (n != -1 && !o.isUnsubscribed()) {
-                        o.onNext(Arrays.copyOf(buffer, n));
-                        if (!o.isUnsubscribed())
-                            n = i.read(buffer);
-                    }
-                } catch (IOException e) {
-                    o.onError(e);
-                }
-                if (o.isUnsubscribed())
-                    return;
-                o.onCompleted();
-            }
-        });
+    public static Observable<byte[]> from(final InputStream is, final int size) {
+        return Observable.create(new OnSubscribeInputStream(is, size));
     }
 
     /**
-     * Reads from the characters from a source {@link Reader} and outputs {@link Observable} of
-     * {@link String}s
+     * Reads characters from a source {@link Reader} and outputs {@link Observable} of
+     * {@link String}s. Supports backpressure.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.from.png" alt="">
      * 
@@ -153,8 +134,8 @@ public class StringObservable {
     }
 
     /**
-     * Reads from the characters from a source {@link Reader} and outputs {@link Observable} of
-     * {@link String}s
+     * Reads characters from a source {@link Reader} and outputs {@link Observable} of
+     * {@link String}s. Supports backpressure.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.from.png" alt="">
      * 
@@ -164,33 +145,12 @@ public class StringObservable {
      *            internal buffer size
      * @return the Observable of Strings read from the source
      */
-    public static Observable<String> from(final Reader i, final int size) {
-        return Observable.create(new OnSubscribe<String>() {
-            @Override
-            public void call(Subscriber<? super String> o) {
-                char[] buffer = new char[size];
-                try {
-                    if (o.isUnsubscribed())
-                        return;
-                    int n = 0;
-                    n = i.read(buffer);
-                    while (n != -1 && !o.isUnsubscribed()) {
-                        o.onNext(new String(buffer, 0, n));
-                        if (!o.isUnsubscribed())
-                            n = i.read(buffer);
-                    }
-                } catch (IOException e) {
-                    o.onError(e);
-                }
-                if (o.isUnsubscribed())
-                    return;
-                o.onCompleted();
-            }
-        });
+    public static Observable<String> from(final Reader reader, final int size) {
+        return Observable.create(new OnSubscribeReader(reader, size));
     }
 
     /**
-     * Decodes a stream the multibyte chunks into a stream of strings that works on infinite streams
+     * Decodes a stream of multibyte chunks into a stream of strings that works on infinite streams
      * and where handles when a multibyte character spans two chunks.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.decode.png" alt="">
@@ -204,7 +164,7 @@ public class StringObservable {
     }
 
     /**
-     * Decodes a stream the multibyte chunks into a stream of strings that works on infinite streams
+     * Decodes a stream of multibyte chunks into a stream of strings that works on infinite streams
      * and where handles when a multibyte character spans two chunks.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.decode.png" alt="">
@@ -218,8 +178,8 @@ public class StringObservable {
     }
 
     /**
-     * Decodes a stream the multibyte chunks into a stream of strings that works on infinite streams
-     * and where it handles when a multibyte character spans two chunks.
+     * Decodes a stream of multibyte chunks into a stream of strings that works on infinite streams
+     * and handles when a multibyte character spans two chunks.
      * This method allows for more control over how malformed and unmappable characters are handled.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.decode.png" alt="">
@@ -311,7 +271,7 @@ public class StringObservable {
     }
 
     /**
-     * Encodes a possible infinite stream of strings into a Observable of byte arrays.
+     * Encodes a possibly infinite stream of strings into an Observable of byte arrays.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.encode.png" alt="">
      * 
@@ -324,7 +284,7 @@ public class StringObservable {
     }
 
     /**
-     * Encodes a possible infinite stream of strings into a Observable of byte arrays.
+     * Encodes a possibly infinite stream of strings into an Observable of byte arrays.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.encode.png" alt="">
      * 
@@ -337,7 +297,7 @@ public class StringObservable {
     }
 
     /**
-     * Encodes a possible infinite stream of strings into a Observable of byte arrays.
+     * Encodes a possibly infinite stream of strings into an Observable of byte arrays.
      * This method allows for more control over how malformed and unmappable characters are handled.
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.encode.png" alt="">
@@ -548,7 +508,7 @@ public class StringObservable {
     }
 
     /**
-     * Converts an String into an Observable that emits the chars in the String.
+     * Converts a String into an Observable that emits the chars in the String.
      * <p>
      * <img width="640" height="315" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/from.png" alt="">
      *

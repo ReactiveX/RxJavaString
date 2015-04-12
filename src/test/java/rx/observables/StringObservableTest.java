@@ -26,8 +26,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static rx.observables.StringObservable.byLine;
 import static rx.observables.StringObservable.byCharacter;
+import static rx.observables.StringObservable.byLine;
 import static rx.observables.StringObservable.decode;
 import static rx.observables.StringObservable.encode;
 import static rx.observables.StringObservable.from;
@@ -62,7 +62,8 @@ public class StringObservableTest {
 
     @Test
     public void testMultibyteSpanningTwoBuffers() {
-        Observable<byte[]> src = Observable.just(new byte[] { (byte) 0xc2 }, new byte[] { (byte) 0xa1 });
+        Observable<byte[]> src = Observable.just(new byte[] { (byte) 0xc2 },
+                new byte[] { (byte) 0xa1 });
         String out = StringObservable.decode(src, "UTF-8").toBlocking().single();
 
         assertEquals("\u00A1", out);
@@ -101,7 +102,7 @@ public class StringObservableTest {
     }
 
     @Test
-    public void testPropogateError() {
+    public void testPropagateError() {
         Observable<byte[]> src = Observable.just(new byte[] { 65 });
         Observable<byte[]> err = Observable.error(new IOException());
         CharsetDecoder charsetDecoder = Charset.forName("UTF-8").newDecoder();
@@ -114,7 +115,7 @@ public class StringObservableTest {
     }
 
     @Test
-    public void testPropogateErrorInTheMiddleOfMultibyte() {
+    public void testPropagateErrorInTheMiddleOfMultibyte() {
         Observable<byte[]> src = Observable.just(new byte[] { (byte) 0xc2 });
         Observable<byte[]> err = Observable.error(new IOException());
         CharsetDecoder charsetDecoder = Charset.forName("UTF-8").newDecoder();
@@ -128,13 +129,12 @@ public class StringObservableTest {
 
     @Test
     public void testEncode() {
-        assertArrayEquals(
-                new byte[] { (byte) 0xc2, (byte) 0xa1 }, encode(Observable.just("\u00A1"), "UTF-8")
-                .toBlocking().single());
+        assertArrayEquals(new byte[] { (byte) 0xc2, (byte) 0xa1 },
+                encode(Observable.just("\u00A1"), "UTF-8").toBlocking().single());
     }
 
     @Test
-    public void testSplitOnCollon() {
+    public void testSplitOnColon() {
         testSplit("boo:and:foo", ":", 0, "boo", "and", "foo");
     }
 
@@ -145,16 +145,16 @@ public class StringObservableTest {
 
     @Test
     public void testSplitOnEmptyStream() {
-        assertEquals(0, (int) StringObservable.split(Observable.<String>empty(), "\n")
-                .count().toBlocking().single());
+        assertEquals(0, (int) StringObservable.split(Observable.<String> empty(), "\n").count()
+                .toBlocking().single());
     }
-    
+
     @Test
     public void testSplitOnStreamThatThrowsExceptionImmediately() {
         RuntimeException ex = new RuntimeException("boo");
         try {
-            StringObservable.split(Observable.<String>error(ex), "\n")
-                .count().toBlocking().single();
+            StringObservable.split(Observable.<String> error(ex), "\n").count().toBlocking()
+                    .single();
             fail();
         } catch (RuntimeException e) {
             assertEquals(ex, e);
@@ -170,10 +170,12 @@ public class StringObservableTest {
         }
     }
 
-    public void testSplit(String message, String regex, int limit, Observable<String> src, String... parts) {
+    public void testSplit(String message, String regex, int limit, Observable<String> src,
+            String... parts) {
         Observable<String> act = split(src, regex);
         Observable<String> exp = Observable.from(parts);
-        AssertObservable.assertObservableEqualsBlocking("when input is " + message + " and limit = " + limit, exp, act);
+        AssertObservable.assertObservableEqualsBlocking("when input is " + message
+                + " and limit = " + limit, exp, act);
     }
 
     @Test
@@ -258,8 +260,8 @@ public class StringObservableTest {
 
     @Test
     public void testJoinThrows() {
-        Observable<String> source = Observable.concat(Observable.just("a"), Observable
-                .<String> error(new RuntimeException("Forced failure")));
+        Observable<String> source = Observable.concat(Observable.just("a"),
+                Observable.<String> error(new RuntimeException("Forced failure")));
 
         Observable<String> result = join(source, ", ");
 
@@ -282,6 +284,23 @@ public class StringObservableTest {
     }
 
     @Test
+    public void testFromEmptyInputStream() {
+        final byte[] inBytes = new byte[0];
+        int count = from(new ByteArrayInputStream(inBytes)).count().toBlocking().single();
+        assertEquals(0, count);
+    }
+
+    @Test
+    public void testFromInputStreamUsesBufferSize() {
+        final byte[] inBytes = "test".getBytes();
+        List<byte[]> list = from(new ByteArrayInputStream(inBytes), 2).toList().toBlocking()
+                .single();
+        assertEquals(2, list.size());
+        assertArrayEquals("te".getBytes(), list.get(0));
+        assertArrayEquals("st".getBytes(), list.get(1));
+    }
+
+    @Test
     public void testFromInputStreamWillUnsubscribeBeforeCallingNextRead() {
         final byte[] inBytes = "test".getBytes();
         final AtomicInteger numReads = new AtomicInteger(0);
@@ -300,40 +319,56 @@ public class StringObservableTest {
     @Test
     public void testFromReader() {
         final String inStr = "test";
-        final String outStr = from(new StringReader(inStr)).toBlocking().single();
+        String outStr = from(new StringReader(inStr)).toBlocking().single();
         assertNotSame(inStr, outStr);
         assertEquals(inStr, outStr);
     }
-    
-	@Test
-	public void testFromReaderWillUnsubscribeBeforeCallingNextRead() {
-		final byte[] inBytes = "test".getBytes();
-		final AtomicInteger numReads = new AtomicInteger(0);
-		ByteArrayInputStream is = new ByteArrayInputStream(inBytes) {
 
-			@Override
-			public synchronized int read(byte[] b, int off, int len) {
-				numReads.incrementAndGet();
-				return super.read(b, off, len);
-			}
-		};
-		StringObservable.from(new InputStreamReader(is)).first().toBlocking()
-				.single();
-		assertEquals(1, numReads.get());
-	}
+    @Test
+    public void testFromEmptyReader() {
+        int count = from(new StringReader("")).count().toBlocking().single();
+        assertEquals(0, count);
+    }
+
+    @Test
+    public void testFromReaderUsesBufferSize() {
+        List<String> list = from(new StringReader("test"), 2).toList().toBlocking().single();
+        assertEquals(2, list.size());
+        assertEquals("te", list.get(0));
+        assertEquals("st", list.get(1));
+    }
+
+    @Test
+    public void testFromReaderWillUnsubscribeBeforeCallingNextRead() {
+        final byte[] inBytes = "test".getBytes();
+        final AtomicInteger numReads = new AtomicInteger(0);
+        ByteArrayInputStream is = new ByteArrayInputStream(inBytes) {
+
+            @Override
+            public synchronized int read(byte[] b, int off, int len) {
+                numReads.incrementAndGet();
+                return super.read(b, off, len);
+            }
+        };
+        StringObservable.from(new InputStreamReader(is)).first().toBlocking().single();
+        assertEquals(1, numReads.get());
+    }
 
     @Test
     public void testByLine() {
         String newLine = System.getProperty("line.separator");
 
-        List<String> lines = byLine(Observable.from(Arrays.asList("qwer", newLine + "asdf" + newLine, "zx", "cv"))).toList().toBlocking().single();
+        List<String> lines = byLine(
+                Observable.from(Arrays.asList("qwer", newLine + "asdf" + newLine, "zx", "cv")))
+                .toList().toBlocking().single();
 
         assertEquals(Arrays.asList("qwer", "asdf", "zxcv"), lines);
     }
-    
+
     @Test
     public void testByCharacter() {
-        List<String> chars = byCharacter(Observable.from(Arrays.asList("foo", "bar"))).toList().toBlocking().single();
+        List<String> chars = byCharacter(Observable.from(Arrays.asList("foo", "bar"))).toList()
+                .toBlocking().single();
 
         assertEquals(Arrays.asList("f", "o", "o", "b", "a", "r"), chars);
     }
@@ -355,7 +390,7 @@ public class StringObservableTest {
             }
         }).subscribe(subscriber);
 
-        assertArrayEquals(new String[]{"he","ll","o"}, subscriber.getOnNextEvents().toArray());
+        assertArrayEquals(new String[] { "he", "ll", "o" }, subscriber.getOnNextEvents().toArray());
         assertEquals(1, subscriber.getOnCompletedEvents().size());
         assertEquals(0, subscriber.getOnErrorEvents().size());
 
@@ -414,7 +449,7 @@ public class StringObservableTest {
             }
         }).take(1).subscribe(subscriber);
 
-        assertArrayEquals(new String[]{"he"}, subscriber.getOnNextEvents().toArray());
+        assertArrayEquals(new String[] { "he" }, subscriber.getOnNextEvents().toArray());
         assertEquals(1, subscriber.getOnNextEvents().size());
         assertEquals(1, subscriber.getOnCompletedEvents().size());
         assertEquals(0, subscriber.getOnErrorEvents().size());
