@@ -17,6 +17,7 @@ package rx.observables;
 
 import rx.Observable;
 import rx.Observable.Operator;
+import rx.Producer;
 import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func0;
@@ -460,39 +461,68 @@ public class StringObservable {
     public static Observable<String> join(final Observable<String> source, final CharSequence separator) {
         return source.lift(new Operator<String, String>() {
             @Override
-            public Subscriber<String> call(final Subscriber<? super String> o) {
-                return new Subscriber<String>(o) {
-                    boolean mayAddSeparator;
-                    StringBuilder b = new StringBuilder();
-
+            public Subscriber<String> call(final Subscriber<? super String> child) {
+                final JoinParentSubscriber parent = new JoinParentSubscriber(child, separator);
+                child.add(parent);
+                child.setProducer(new Producer() {
                     @Override
-                    public void onCompleted() {
-                        String str = b.toString();
-                        b = null;
-                        if (!o.isUnsubscribed())
-                            o.onNext(str);
-                        if (!o.isUnsubscribed())
-                            o.onCompleted();
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        b = null;
-                        if (!o.isUnsubscribed())
-                            o.onError(e);
-                    }
-
-                    @Override
-                    public void onNext(String t) {
-                        if (mayAddSeparator) {
-                            b.append(separator);
-                        }
-                        mayAddSeparator = true;
-                        b.append(t);
-                    }
-                };
+                    public void request(long n) {
+                       if (n > 0) {
+                           parent.requestAll();
+                       }
+                    }});
+                return parent;
             }
         });
+    }
+    
+    private static final class JoinParentSubscriber extends Subscriber<String> {
+        
+        private final Subscriber<? super String> child;
+        private final CharSequence separator;
+        private boolean mayAddSeparator;
+        private StringBuilder b = new StringBuilder();
+        
+        JoinParentSubscriber(Subscriber<? super String> child, CharSequence separator) {
+            this.child = child;
+            this.separator = separator;
+        }
+
+        void requestAll() {
+            request(Long.MAX_VALUE);
+        }
+        
+        @Override
+        public void onStart() {
+            request(0);
+        }
+
+        @Override
+        public void onCompleted() {
+            String str = b.toString();
+            b = null;
+            if (!child.isUnsubscribed())
+                child.onNext(str);
+            if (!child.isUnsubscribed())
+                child.onCompleted();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            b = null;
+            if (!child.isUnsubscribed())
+                child.onError(e);
+        }
+
+        @Override
+        public void onNext(String t) {
+            if (mayAddSeparator) {
+                b.append(separator);
+            }
+            mayAddSeparator = true;
+            b.append(t);
+        }
+        
     }
 
     /**
