@@ -26,6 +26,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static rx.Observable.just;
 import static rx.observables.StringObservable.byCharacter;
 import static rx.observables.StringObservable.byLine;
 import static rx.observables.StringObservable.decode;
@@ -455,5 +456,26 @@ public class StringObservableTest {
         assertEquals(0, subscriber.getOnErrorEvents().size());
 
         verify(reader, times(1)).close();
+    }
+    
+    @Test(timeout=5000)
+    public void testJoinDoesNotStallIssue23() {
+        String s = StringObservable
+                 .join(just("a","b","c"),",")
+                .toBlocking().single();
+        assertEquals("a,b,c", s);
+    }
+    
+    @Test
+    public void testJoinBackpressure() {
+        TestSubscriber<String> ts = new TestSubscriber<String>(0);
+        StringObservable
+            .join(just("a","b","c"),",")
+            .subscribe(ts);
+        ts.assertNoValues();
+        ts.assertNoTerminalEvent();
+        ts.requestMore(1);
+        ts.assertValues("a,b,c");
+        ts.assertCompleted();
     }
 }
