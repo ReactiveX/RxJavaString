@@ -368,11 +368,36 @@ public class StringObservable {
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.split.png" alt="">
      * 
      * @param src
+     *           the source that should be use for the split
      * @param regex
+     *           a string that build regular expression modifier
      * @return the Observable streaming the split values
      */
+
     public static Observable<String> split(final Observable<String> src, String regex) {
-        final Pattern pattern = Pattern.compile(regex);
+        Pattern pattern = Pattern.compile(regex);
+        return StringObservable.split(src,pattern);
+    }
+
+    /**
+     * Rechunks the strings based on a regex pattern and works on infinite stream.
+     *
+     * <pre>
+     * split(["boo:an", "d:foo"], ":") --> ["boo", "and", "foo"]
+     * split(["boo:an", "d:foo"], "o") --> ["b", "", ":and:f", "", ""]
+     * </pre>
+     *
+     * See {@link Pattern}
+     * <p>
+     * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.split.png" alt="">
+     *
+     * @param src
+     *           the source that should be use for the split
+     * @param pattern
+     *           pre compiled regular expression pattern for the split functionality
+     * @return the Observable streaming the split values
+     */
+    public static Observable<String> split(final Observable<String> src, final Pattern pattern) {
 
         return src.lift(new Operator<String, String>() {
             @Override
