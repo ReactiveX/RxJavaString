@@ -101,7 +101,7 @@ public class StringObservable {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        }, true);
     }
 
     /**
