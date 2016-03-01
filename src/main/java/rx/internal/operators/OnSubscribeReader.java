@@ -1,12 +1,12 @@
 package rx.internal.operators;
 
+import rx.Observer;
+import rx.observables.SyncOnSubscribe;
+
 import java.io.IOException;
 import java.io.Reader;
 
-import rx.Subscriber;
-import rx.observables.AbstractOnSubscribe;
-
-public final class OnSubscribeReader extends AbstractOnSubscribe<String, Reader> {
+public final class OnSubscribeReader extends SyncOnSubscribe<Reader, String> {
 
     private final Reader reader;
     private final int size;
@@ -17,23 +17,22 @@ public final class OnSubscribeReader extends AbstractOnSubscribe<String, Reader>
     }
 
     @Override
-    protected Reader onSubscribe(Subscriber<? super String> subscriber) {
-        return reader;
+    protected Reader generateState() {
+        return this.reader;
     }
 
     @Override
-    protected void next(SubscriptionState<String, Reader> state) {
-
-        Reader reader = state.state();
+    protected Reader next(Reader state, Observer<? super String> observer) {
         char[] buffer = new char[size];
         try {
             int count = reader.read(buffer);
             if (count == -1)
-                state.onCompleted();
+                observer.onCompleted();
             else
-                state.onNext(String.valueOf(buffer, 0, count));
+                observer.onNext(String.valueOf(buffer, 0, count));
         } catch (IOException e) {
-            state.onError(e);
+            observer.onError(e);
         }
+        return reader;
     }
 }
