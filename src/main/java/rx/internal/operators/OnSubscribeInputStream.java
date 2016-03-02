@@ -26,7 +26,7 @@ public final class OnSubscribeInputStream extends SyncOnSubscribe<InputStream, b
     protected InputStream next(InputStream state, Observer<? super byte[]> observer) {
         byte[] buffer = new byte[size];
         try {
-            int count = this.is.read(buffer);
+            int count = state.read(buffer);
             if (count == -1)
                 observer.onCompleted();
             else if (count < size)

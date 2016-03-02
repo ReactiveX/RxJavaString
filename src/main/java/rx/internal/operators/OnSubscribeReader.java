@@ -25,7 +25,7 @@ public final class OnSubscribeReader extends SyncOnSubscribe<Reader, String> {
     protected Reader next(Reader state, Observer<? super String> observer) {
         char[] buffer = new char[size];
         try {
-            int count = reader.read(buffer);
+            int count = state.read(buffer);
             if (count == -1)
                 observer.onCompleted();
             else
@@ -33,6 +33,6 @@ public final class OnSubscribeReader extends SyncOnSubscribe<Reader, String> {
         } catch (IOException e) {
             observer.onError(e);
         }
-        return reader;
+        return state;
     }
 }
