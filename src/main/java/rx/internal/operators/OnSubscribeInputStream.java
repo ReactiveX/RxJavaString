@@ -1,13 +1,13 @@
 package rx.internal.operators;
 
+import rx.Observer;
+import rx.observables.SyncOnSubscribe;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import rx.Subscriber;
-import rx.observables.AbstractOnSubscribe;
-
-public final class OnSubscribeInputStream extends AbstractOnSubscribe<byte[], InputStream> {
+public final class OnSubscribeInputStream extends SyncOnSubscribe<InputStream, byte[]> {
 
     private final InputStream is;
     private final int size;
@@ -18,25 +18,24 @@ public final class OnSubscribeInputStream extends AbstractOnSubscribe<byte[], In
     }
 
     @Override
-    protected InputStream onSubscribe(Subscriber<? super byte[]> subscriber) {
-        return is;
+    protected InputStream generateState() {
+        return this.is;
     }
 
     @Override
-    protected void next(SubscriptionState<byte[], InputStream> state) {
-
-        InputStream is = state.state();
+    protected InputStream next(InputStream state, Observer<? super byte[]> observer) {
         byte[] buffer = new byte[size];
         try {
-            int count = is.read(buffer);
+            int count = state.read(buffer);
             if (count == -1)
-                state.onCompleted();
+                observer.onCompleted();
             else if (count < size)
-                state.onNext(Arrays.copyOf(buffer, count));
+                observer.onNext(Arrays.copyOf(buffer, count));
             else
-                state.onNext(buffer);
+                observer.onNext(buffer);
         } catch (IOException e) {
-            state.onError(e);
+            observer.onError(e);
         }
+        return state;
     }
 }
