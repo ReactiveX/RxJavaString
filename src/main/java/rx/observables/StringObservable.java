@@ -551,15 +551,26 @@ public class StringObservable {
     }
 
     /**
-     * Splits the {@link Observable} of Strings by lines and numbers them (zero based index)
+     * Splits the {@link Observable} of Strings by line ending characters in a platform independent way. It is equivalent to
+     * <pre>split(src, "(\\r\\n)|\\n|\\r|\\u0085|\\u2028|\\u2029")</pre>
      * <p>
      * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.byLine.png" alt="">
      * 
      * @param source
      * @return the Observable conaining the split lines of the source
+     * @see StringObservable#split(Observable, Pattern)
      */
     public static Observable<String> byLine(Observable<String> source) {
-        return split(source, System.getProperty("line.separator"));
+        return split(source, ByLinePatternHolder.BY_LINE);
+    }
+
+    /**
+     * Lazy initialization of the pattern.
+     * 
+     * https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#lt
+     */
+    private static final class ByLinePatternHolder {
+        private static final Pattern BY_LINE = Pattern.compile("(\\r\\n)|\\n|\\r|\\u0085|\\u2028|\\u2029");
     }
 
     /**

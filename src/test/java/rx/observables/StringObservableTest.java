@@ -356,9 +356,42 @@ public class StringObservableTest {
     }
 
     @Test
-    public void testByLine() {
-        String newLine = System.getProperty("line.separator");
+    public void testByLine_Newline() {
+        String newLine = String.valueOf(new char[] { 0x0A });
+        testByLineGeneric(newLine);
+    }
 
+    @Test
+    public void testByLine_CarriageNewline() {
+        String newLine = String.valueOf(new char[] { 0x0D, 0x0A });
+        testByLineGeneric(newLine);
+    }
+
+    @Test
+    public void testByLine_Carriage() {
+        String newLine = String.valueOf(new char[] { 0x0D });
+        testByLineGeneric(newLine);
+    }
+
+    @Test
+    public void testByLine_NextLine() {
+        String newLine = String.valueOf(new char[] { 0x0085 });
+        testByLineGeneric(newLine);
+    }
+
+    @Test
+    public void testByLine_LineSeparator() {
+        String newLine = String.valueOf(new char[] { 0x2028 });
+        testByLineGeneric(newLine);
+    }
+
+    @Test
+    public void testByLine_ParagraphSeparator() {
+        String newLine = String.valueOf(new char[] { 0x2029 });
+        testByLineGeneric(newLine);
+    }
+
+    private void testByLineGeneric(String newLine) {
         List<String> lines = byLine(
                 Observable.from(Arrays.asList("qwer", newLine + "asdf" + newLine, "zx", "cv")))
                 .toList().toBlocking().single();
