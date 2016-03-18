@@ -17,6 +17,7 @@ package rx.observables;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -46,6 +47,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.MalformedInputException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -177,6 +179,16 @@ public class StringObservableTest {
         Observable<String> exp = Observable.from(parts);
         AssertObservable.assertObservableEqualsBlocking("when input is " + message
                 + " and limit = " + limit, exp, act);
+    }
+    
+    @Test
+    public void testSplitLongPattern() {
+        Iterator<String> iter = StringObservable.split(Observable.just("asdfqw","erasdf"), "qwer").toBlocking().getIterator();
+        assertTrue(iter.hasNext());
+        assertEquals("asdf", iter.next());
+        assertTrue(iter.hasNext());
+        assertEquals("asdf", iter.next());
+        assertFalse(iter.hasNext());
     }
 
     @Test

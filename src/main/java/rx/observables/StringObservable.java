@@ -423,10 +423,10 @@ public class StringObservable {
 
                     @Override
                     public void onNext(String segment) {
+                        if (leftOver != null)
+                            segment = leftOver + segment;
                         String[] parts = pattern.split(segment, -1);
 
-                        if (leftOver != null)
-                            parts[0] = leftOver + parts[0];
                         for (int i = 0; i < parts.length - 1; i++) {
                             String part = parts[i];
                             output(part);
