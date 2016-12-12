@@ -26,6 +26,7 @@ import rx.exceptions.Exceptions;
 import rx.internal.operators.BackpressureUtils;
 import rx.internal.util.atomic.SpscAtomicArrayQueue;
 import rx.internal.util.unsafe.*;
+import rx.plugins.RxJavaHooks;
 
 /**
  * Split a sequence of strings based on a Rexexp pattern spanning subsequent
@@ -132,7 +133,7 @@ final class ObservableSplit implements OnSubscribe<String> {
         @Override
         public void onError(Throwable e) {
             if (done) {
-//                RxJavaHooks.onError(e); RxJava 1.2+ required
+                RxJavaHooks.onError(e);
                 return;
             }
             String lo = leftOver;
