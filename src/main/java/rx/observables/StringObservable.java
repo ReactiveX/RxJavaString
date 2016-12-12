@@ -15,33 +15,18 @@
  */
 package rx.observables;
 
-import rx.Observable;
-import rx.Observable.Operator;
-import rx.Producer;
-import rx.Subscriber;
-import rx.functions.Action1;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.internal.operators.OnSubscribeInputStream;
-import rx.internal.operators.OnSubscribeReader;
-import rx.internal.util.RxRingBuffer;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
+import java.io.*;
+import java.nio.*;
+import java.nio.charset.*;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+
+import rx.*;
+import rx.Observable.Operator;
+import rx.functions.*;
+import rx.internal.operators.*;
+import rx.internal.util.RxRingBuffer;
 
 public class StringObservable {
     /**

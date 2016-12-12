@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.observables;
+package rx.internal.operators;
 
 import java.util.Queue;
 import java.util.concurrent.atomic.*;
@@ -32,7 +32,7 @@ import rx.plugins.RxJavaHooks;
  * Split a sequence of strings based on a Rexexp pattern spanning subsequent
  * items if necessary.
  */
-final class ObservableSplit implements OnSubscribe<String> {
+public final class ObservableSplit implements OnSubscribe<String> {
 
     final Observable<String> source;
 
@@ -40,7 +40,7 @@ final class ObservableSplit implements OnSubscribe<String> {
     
     final int bufferSize;
 
-    ObservableSplit(Observable<String> source, Pattern pattern, int bufferSize) {
+    public ObservableSplit(Observable<String> source, Pattern pattern, int bufferSize) {
         this.source = source;
         this.pattern = pattern;
         this.bufferSize = bufferSize;
