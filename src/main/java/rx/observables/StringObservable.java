@@ -15,32 +15,18 @@
  */
 package rx.observables;
 
-import rx.Observable;
-import rx.Observable.Operator;
-import rx.Producer;
-import rx.Subscriber;
-import rx.functions.Action1;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.internal.operators.OnSubscribeInputStream;
-import rx.internal.operators.OnSubscribeReader;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
+import java.io.*;
+import java.nio.*;
+import java.nio.charset.*;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+
+import rx.*;
+import rx.Observable.Operator;
+import rx.functions.*;
+import rx.internal.operators.*;
+import rx.internal.util.RxRingBuffer;
 
 public class StringObservable {
     /**
@@ -398,64 +384,7 @@ public class StringObservable {
      * @return the Observable streaming the split values
      */
     public static Observable<String> split(final Observable<String> src, final Pattern pattern) {
-
-        return src.lift(new Operator<String, String>() {
-            @Override
-            public Subscriber<? super String> call(final Subscriber<? super String> o) {
-                return new Subscriber<String>(o) {
-                    private String leftOver = null;
-
-                    @Override
-                    public void onCompleted() {
-                        if (leftOver!=null)
-                            output(leftOver);
-                        if (!o.isUnsubscribed())
-                            o.onCompleted();
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        if (leftOver!=null)
-                            output(leftOver);
-                        if (!o.isUnsubscribed())
-                            o.onError(e);
-                    }
-
-                    @Override
-                    public void onNext(String segment) {
-                        if (leftOver != null)
-                            segment = leftOver + segment;
-                        String[] parts = pattern.split(segment, -1);
-
-                        for (int i = 0; i < parts.length - 1; i++) {
-                            String part = parts[i];
-                            output(part);
-                        }
-                        leftOver = parts[parts.length - 1];
-                    }
-
-                    private int emptyPartCount = 0;
-
-                    /**
-                     * when limit == 0 trailing empty parts are not emitted.
-                     * 
-                     * @param part
-                     */
-                    private void output(String part) {
-                        if (part.isEmpty()) {
-                            emptyPartCount++;
-                        }
-                        else {
-                            for (; emptyPartCount > 0; emptyPartCount--)
-                                if (!o.isUnsubscribed())
-                                    o.onNext("");
-                            if (!o.isUnsubscribed())
-                                o.onNext(part);
-                        }
-                    }
-                };
-            }
-        });
+        return Observable.create(new ObservableSplit(src, pattern, RxRingBuffer.SIZE));
     }
 
     /**
